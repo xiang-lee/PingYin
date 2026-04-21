@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PinPin | 拼音冒险</title>
+    <meta
+      name="description"
+      content="PinPin 是一个给孩子练习中文拼音、声调和朗读的小冒险站。"
+    />
+    <link rel="stylesheet" href="./styles.css?v=05f9831" />
+  </head>
+  <body>
+    <div class="cloud cloud-a"></div>
+    <div class="cloud cloud-b"></div>
+    <div class="spark spark-a"></div>
+    <div class="spark spark-b"></div>
+
+    <main class="app-shell">
+      <section class="splash panel" id="home-panel">
+        <div class="brand-stack">
+          <div class="brand-mascot">🦊</div>
+          <div>
+            <p class="brand-tag">PinPin</p>
+            <h1>pīn yīn!</h1>
+            <div class="mini-icons" aria-hidden="true">
+              <span>👂</span>
+              <span>🧩</span>
+              <span>🎤</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="splash-actions">
+          <button class="primary-btn splash-play" id="start-button">▶︎ kāi shǐ</button>
+          <button class="ghost-btn icon-only" id="reset-progress-button" title="重置进度">↺</button>
+        </div>
+
+        <div class="status-strip" id="voice-strip"></div>
+      </section>
+
+      <section class="map panel" id="map-panel">
+        <div class="map-head">
+          <div>
+            <p class="eyebrow">Play</p>
+            <h2>选一关</h2>
+          </div>
+          <div class="score-pill" id="total-stars-pill">⭐ 0</div>
+        </div>
+
+        <div class="level-grid" id="level-grid"></div>
+      </section>
+
+      <section class="game panel hidden" id="game-panel">
+        <div class="game-toolbar">
+          <button class="ghost-btn icon-only" id="back-to-map-button" title="回地图">🗺</button>
+          <div class="progress-dots" id="progress-dots"></div>
+          <div class="score-pill" id="reward-chip">⭐ 0</div>
+          <div class="mistake-chip" id="mistake-chip" aria-label="mistakes">🩵🩵🩵</div>
+        </div>
+
+        <div class="question-card" id="question-card">
+          <div class="type-chip" id="question-type-chip"></div>
+          <p class="prompt-copy" id="prompt-copy"></p>
+
+          <div class="target-card" id="target-card"></div>
+
+          <div class="action-row">
+            <button class="secondary-btn icon-action" id="play-audio-button">🔊</button>
+          </div>
+
+          <div class="feedback-box" id="feedback-box">▶︎</div>
+
+          <div class="answer-row">
+            <button class="judge-btn judge-bad" id="wrong-button">❌</button>
+            <button class="judge-btn judge-good" id="correct-button">✅</button>
+          </div>
+
+          <button class="primary-btn next-btn hidden" id="next-question-button">→</button>
+        </div>
+      </section>
+
+      <section class="result panel hidden" id="result-panel">
+        <div class="result-badge" id="result-badge">✨✨✨</div>
+        <h2 id="result-title">hǎo!</h2>
+        <p class="result-copy" id="result-copy">继续</p>
+        <div class="hero-actions">
+          <button class="primary-btn" id="next-level-button">xià yī guān →</button>
+          <button class="ghost-btn icon-only" id="result-map-button" title="回地图">🗺</button>
+        </div>
+      </section>
+    </main>
+    <script src="./app.js?v=05f9831"></script>
+  </body>
+</html>

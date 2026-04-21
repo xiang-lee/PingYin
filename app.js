@@ -1,5 +1,6 @@
 const STORAGE_KEY = "pinpin-progress-v4";
 const QUESTIONS_PER_ROUND = 3;
+const AUTO_NEXT_DELAY_MS = 650;
 
 function createQuestion(id, emoji, hanzi, pinyin) {
   return {
@@ -88,7 +89,6 @@ const ui = {
   feedbackBox: document.getElementById("feedback-box"),
   wrongButton: document.getElementById("wrong-button"),
   correctButton: document.getElementById("correct-button"),
-  nextQuestionButton: document.getElementById("next-question-button"),
   backToMapButton: document.getElementById("back-to-map-button"),
   resultBadge: document.getElementById("result-badge"),
   resultTitle: document.getElementById("result-title"),
@@ -214,9 +214,9 @@ function renderQuestion() {
   ui.promptCopy.textContent = question.prompt;
   ui.targetCard.innerHTML = renderTargetMarkup(question.target);
   ui.feedbackBox.className = "feedback-box";
-  ui.feedbackBox.textContent = "🔊";
-  ui.nextQuestionButton.classList.add("hidden");
-  ui.nextQuestionButton.disabled = true;
+  ui.feedbackBox.textContent = "✨";
+  ui.correctButton.disabled = false;
+  ui.wrongButton.disabled = false;
 
   updateProgressDots(state.activeQuestions.length, state.questionIndex);
   updateRewardChip();
@@ -255,6 +255,8 @@ function renderTargetMarkup(target) {
 function answerQuestion(correct) {
   if (state.questionResolved) return;
   state.questionResolved = true;
+  ui.correctButton.disabled = true;
+  ui.wrongButton.disabled = true;
 
   if (correct) {
     state.levelRewards += 1;
@@ -268,8 +270,7 @@ function answerQuestion(correct) {
     updateHeartChip();
   }
 
-  ui.nextQuestionButton.classList.remove("hidden");
-  ui.nextQuestionButton.disabled = false;
+  window.setTimeout(() => moveToNextQuestion(), AUTO_NEXT_DELAY_MS);
 }
 
 function moveToNextQuestion() {
@@ -338,7 +339,6 @@ ui.resultMapButton.addEventListener("click", () => showScreen(ui.mapPanel));
 ui.playAudioButton.addEventListener("click", speakCurrentQuestion);
 ui.correctButton.addEventListener("click", () => answerQuestion(true));
 ui.wrongButton.addEventListener("click", () => answerQuestion(false));
-ui.nextQuestionButton.addEventListener("click", moveToNextQuestion);
 
 updateVoiceStrip();
 renderMap();

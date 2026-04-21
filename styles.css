@@ -661,12 +661,6 @@ button:disabled {
   background: linear-gradient(135deg, rgba(255, 180, 168, 0.2), rgba(255, 136, 189, 0.18));
 }
 
-.next-btn {
-  width: 100%;
-  min-height: 4rem;
-  font-size: 1.6rem;
-}
-
 @media (max-width: 640px) {
   .app-shell {
     width: min(100% - 0.7rem, 1120px);

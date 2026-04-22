@@ -8,7 +8,7 @@
       name="description"
       content="PingYin 是一个给孩子练习中文拼音、声调和朗读的小冒险站。"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260422a" />
+    <link rel="stylesheet" href="./styles.css?v=20260422b" />
   </head>
   <body>
     <div class="cloud cloud-a"></div>
@@ -22,7 +22,12 @@
           <div class="brand-mascot">🦊</div>
           <div>
             <p class="brand-tag">PingYin</p>
-            <h1>拼音 pīn yīn!</h1>
+            <h1>
+              <span class="bilingual-stack title-stack">
+                <span class="bilingual-pinyin">pīn yīn</span>
+                <span class="bilingual-hanzi">拼音</span>
+              </span>
+            </h1>
             <div class="mini-icons" aria-hidden="true">
               <span>👂</span>
               <span>🧩</span>
@@ -32,7 +37,15 @@
         </div>
 
         <div class="splash-actions">
-          <button class="primary-btn splash-play" id="start-button">▶︎ 开始 kāi shǐ</button>
+          <button class="primary-btn splash-play" id="start-button">
+            <span class="button-bilingual">
+              <span class="button-tail">▶︎</span>
+              <span class="bilingual-stack compact">
+                <span class="bilingual-pinyin">kāi shǐ</span>
+                <span class="bilingual-hanzi">开始</span>
+              </span>
+            </span>
+          </button>
           <button class="ghost-btn icon-only" id="reset-progress-button" title="重置进度">↺</button>
         </div>
 
@@ -80,14 +93,27 @@
 
       <section class="result panel hidden" id="result-panel">
         <div class="result-badge" id="result-badge">✨✨✨</div>
-        <h2 id="result-title">好 hǎo!</h2>
+        <h2 id="result-title">
+          <span class="bilingual-stack compact">
+            <span class="bilingual-pinyin">hǎo</span>
+            <span class="bilingual-hanzi">好</span>
+          </span>
+        </h2>
         <p class="result-copy" id="result-copy">继续</p>
         <div class="hero-actions">
-          <button class="primary-btn" id="next-level-button">下一关 xià yī guān →</button>
+          <button class="primary-btn" id="next-level-button">
+            <span class="button-bilingual">
+              <span class="bilingual-stack compact">
+                <span class="bilingual-pinyin">xià yī guān</span>
+                <span class="bilingual-hanzi">下一关</span>
+              </span>
+              <span class="button-tail">→</span>
+            </span>
+          </button>
           <button class="ghost-btn icon-only" id="result-map-button" title="回地图">🗺</button>
         </div>
       </section>
     </main>
-    <script src="./app.js?v=20260422a"></script>
+    <script src="./app.js?v=20260422b"></script>
   </body>
 </html>

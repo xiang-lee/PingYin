@@ -5,8 +5,8 @@ const AUTO_NEXT_DELAY_MS = 650;
 function createQuestion(id, emoji, hanzi, pinyin) {
   return {
     id,
-    cue: "读 dú",
-    prompt: "看 · 听 · 读 kàn · tīng · dú",
+    cue: { hanzi: "读", pinyin: "dú" },
+    prompt: { hanzi: "看 · 听 · 读", pinyin: "kàn · tīng · dú" },
     target: { emoji, hanzi, pinyin },
     speechText: hanzi,
   };
@@ -16,8 +16,8 @@ const LEVELS = [
   {
     id: "forest-gate",
     icon: "🌳",
-    title: "妈妈 mā ma",
-    subtitle: "米 mǐ",
+    title: { hanzi: "妈妈", pinyin: "mā ma" },
+    subtitle: { hanzi: "米", pinyin: "mǐ" },
     questionPool: [
       createQuestion("forest-mama", "👩", "妈妈", "mā ma"),
       createQuestion("forest-baba", "👨", "爸爸", "bà ba"),
@@ -34,8 +34,8 @@ const LEVELS = [
   {
     id: "sun-bridge",
     icon: "🌞",
-    title: "牛奶 niú nǎi",
-    subtitle: "太阳 tài yáng",
+    title: { hanzi: "牛奶", pinyin: "niú nǎi" },
+    subtitle: { hanzi: "太阳", pinyin: "tài yáng" },
     questionPool: [
       createQuestion("bridge-niunai", "🥛", "牛奶", "niú nǎi"),
       createQuestion("bridge-taiyang", "☀️", "太阳", "tài yáng"),
@@ -52,8 +52,8 @@ const LEVELS = [
   {
     id: "treasure-room",
     icon: "🎁",
-    title: "苹果 píng guǒ",
-    subtitle: "宝箱 bǎo xiāng",
+    title: { hanzi: "苹果", pinyin: "píng guǒ" },
+    subtitle: { hanzi: "宝箱", pinyin: "bǎo xiāng" },
     questionPool: [
       createQuestion("treasure-baoxiang", "🎁", "宝箱", "bǎo xiāng"),
       createQuestion("treasure-caihong", "🌈", "彩虹", "cǎi hóng"),
@@ -243,8 +243,8 @@ function renderMap() {
         <div class="level-count">${index + 1}</div>
       </div>
       <div class="level-text">
-        <h3>${level.title}</h3>
-        <p>${level.subtitle}</p>
+        <h3>${renderBilingualMarkup(level.title.hanzi, level.title.pinyin, "level-title-stack")}</h3>
+        <p>${renderBilingualMarkup(level.subtitle.hanzi, level.subtitle.pinyin, "level-subtitle-stack")}</p>
       </div>
       <div class="level-mini">${renderRewardText(rewards)}</div>
     `;
@@ -282,8 +282,8 @@ function renderQuestion() {
   const question = state.activeQuestions[state.questionIndex];
 
   state.questionResolved = false;
-  ui.questionTypeChip.textContent = question.cue;
-  ui.promptCopy.textContent = question.prompt;
+  ui.questionTypeChip.innerHTML = renderBilingualMarkup(question.cue.hanzi, question.cue.pinyin, "chip-stack compact");
+  ui.promptCopy.innerHTML = renderBilingualMarkup(question.prompt.hanzi, question.prompt.pinyin, "prompt-stack");
   ui.targetCard.innerHTML = renderTargetMarkup(question.target);
   ui.feedbackBox.className = "feedback-box";
   ui.feedbackBox.textContent = "✨";
@@ -321,6 +321,17 @@ function renderTargetMarkup(target) {
       <div class="target-hanzi">${target.hanzi}</div>
       <div class="target-pinyin">${target.pinyin}</div>
     </div>
+  `;
+}
+
+function renderBilingualMarkup(hanzi, pinyin, className = "") {
+  const normalized = className ? ` ${className}` : "";
+
+  return `
+    <span class="bilingual-stack${normalized}">
+      <span class="bilingual-pinyin">${pinyin}</span>
+      <span class="bilingual-hanzi">${hanzi}</span>
+    </span>
   `;
 }
 
@@ -364,11 +375,15 @@ function finishLevel() {
   renderMap();
 
   ui.resultBadge.textContent = renderRewardText(rewards);
-  ui.resultTitle.textContent = `${level.icon} ${rewards} ⭐`;
-  ui.resultCopy.textContent = state.heartsLeft >= 2 ? "很好 hěn hǎo!" : "再来 zài lái";
+  ui.resultTitle.innerHTML = `${level.icon} ${renderBilingualMarkup("好", "hǎo", "compact result-stack")} ${rewards} ⭐`;
+  ui.resultCopy.innerHTML = state.heartsLeft >= 2
+    ? renderBilingualMarkup("很好", "hěn hǎo", "compact result-copy-stack")
+    : renderBilingualMarkup("再来", "zài lái", "compact result-copy-stack");
 
   const hasNext = state.levelIndex < LEVELS.length - 1;
-  ui.nextLevelButton.textContent = hasNext ? "下一关 xià yī guān →" : "再来一次 zài lái yí cì →";
+  ui.nextLevelButton.innerHTML = hasNext
+    ? `<span class="button-bilingual">${renderBilingualMarkup("下一关", "xià yī guān", "compact")}<span class="button-tail">→</span></span>`
+    : `<span class="button-bilingual">${renderBilingualMarkup("再来一次", "zài lái yí cì", "compact")}<span class="button-tail">→</span></span>`;
   ui.nextLevelButton.onclick = () => startLevel(hasNext ? state.levelIndex + 1 : 0);
 
   showScreen(ui.resultPanel);

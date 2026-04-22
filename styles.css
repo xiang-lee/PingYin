@@ -164,6 +164,53 @@ body {
   line-height: 0.94;
 }
 
+.bilingual-stack {
+  display: inline-grid;
+  gap: 0.12rem;
+  justify-items: center;
+  line-height: 1;
+}
+
+.bilingual-pinyin {
+  font-size: 0.58em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.bilingual-hanzi {
+  font-size: 1em;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.bilingual-stack.compact {
+  gap: 0.1rem;
+}
+
+.bilingual-stack.compact .bilingual-pinyin {
+  font-size: 0.5em;
+}
+
+.title-stack {
+  justify-items: start;
+}
+
+.title-stack .bilingual-pinyin {
+  font-size: 0.42em;
+}
+
+.button-bilingual {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.button-tail {
+  font-size: 1.1em;
+  line-height: 1;
+}
+
 .mini-icons {
   display: flex;
   gap: 0.45rem;
@@ -263,6 +310,15 @@ button:disabled {
   font-weight: 700;
 }
 
+.splash-play .bilingual-stack {
+  justify-items: start;
+}
+
+.splash-play .bilingual-pinyin,
+.primary-btn .bilingual-pinyin {
+  color: #22404d;
+}
+
 .map {
   display: grid;
   gap: 0.9rem;
@@ -357,6 +413,27 @@ button:disabled {
   font-size: 0.92rem;
 }
 
+.level-title-stack {
+  justify-items: start;
+}
+
+.level-title-stack .bilingual-pinyin {
+  font-size: 0.44em;
+}
+
+.level-subtitle-stack {
+  justify-items: start;
+}
+
+.level-subtitle-stack .bilingual-pinyin {
+  font-size: 0.72em;
+}
+
+.level-subtitle-stack .bilingual-hanzi {
+  font-size: 0.98em;
+  font-weight: 700;
+}
+
 .level-play {
   width: 100%;
   justify-self: stretch;
@@ -411,6 +488,16 @@ button:disabled {
   background: rgba(255, 255, 255, 0.12);
   color: var(--text);
   font-weight: 700;
+  min-height: auto;
+  padding: 0.55rem 0.85rem;
+}
+
+.chip-stack .bilingual-pinyin {
+  font-size: 0.72rem;
+}
+
+.chip-stack .bilingual-hanzi {
+  font-size: 1rem;
 }
 
 .prompt-copy {
@@ -418,6 +505,14 @@ button:disabled {
   text-align: center;
   font-size: 1.05rem;
   letter-spacing: 0.04em;
+}
+
+.prompt-stack .bilingual-pinyin {
+  font-size: 0.82rem;
+}
+
+.prompt-stack .bilingual-hanzi {
+  font-size: 1.12rem;
 }
 
 .target-card {
@@ -626,6 +721,19 @@ button:disabled {
   border-radius: 28px;
   background: linear-gradient(135deg, rgba(255, 217, 106, 0.25), rgba(126, 241, 209, 0.2));
   font-size: 2rem;
+}
+
+.result-stack,
+.result-copy-stack {
+  justify-items: center;
+}
+
+.result-copy-stack .bilingual-pinyin {
+  font-size: 0.82rem;
+}
+
+.result-copy-stack .bilingual-hanzi {
+  font-size: 1.08rem;
 }
 
 @media (min-width: 860px) {

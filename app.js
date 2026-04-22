@@ -5,8 +5,8 @@ const AUTO_NEXT_DELAY_MS = 650;
 function createQuestion(id, emoji, hanzi, pinyin) {
   return {
     id,
-    cue: "dú",
-    prompt: "kàn · tīng · dú",
+    cue: "读 dú",
+    prompt: "看 · 听 · 读 kàn · tīng · dú",
     target: { emoji, hanzi, pinyin },
     speechText: hanzi,
   };
@@ -16,8 +16,8 @@ const LEVELS = [
   {
     id: "forest-gate",
     icon: "🌳",
-    title: "mā ma",
-    subtitle: "mǐ",
+    title: "妈妈 mā ma",
+    subtitle: "米 mǐ",
     questionPool: [
       createQuestion("forest-mama", "👩", "妈妈", "mā ma"),
       createQuestion("forest-baba", "👨", "爸爸", "bà ba"),
@@ -34,8 +34,8 @@ const LEVELS = [
   {
     id: "sun-bridge",
     icon: "🌞",
-    title: "niú nǎi",
-    subtitle: "tài yáng",
+    title: "牛奶 niú nǎi",
+    subtitle: "太阳 tài yáng",
     questionPool: [
       createQuestion("bridge-niunai", "🥛", "牛奶", "niú nǎi"),
       createQuestion("bridge-taiyang", "☀️", "太阳", "tài yáng"),
@@ -52,8 +52,8 @@ const LEVELS = [
   {
     id: "treasure-room",
     icon: "🎁",
-    title: "píng guǒ",
-    subtitle: "bǎo xiāng",
+    title: "苹果 píng guǒ",
+    subtitle: "宝箱 bǎo xiāng",
     questionPool: [
       createQuestion("treasure-baoxiang", "🎁", "宝箱", "bǎo xiāng"),
       createQuestion("treasure-caihong", "🌈", "彩虹", "cǎi hóng"),
@@ -365,10 +365,10 @@ function finishLevel() {
 
   ui.resultBadge.textContent = renderRewardText(rewards);
   ui.resultTitle.textContent = `${level.icon} ${rewards} ⭐`;
-  ui.resultCopy.textContent = state.heartsLeft >= 2 ? "hǎo!" : "zài lái";
+  ui.resultCopy.textContent = state.heartsLeft >= 2 ? "很好 hěn hǎo!" : "再来 zài lái";
 
   const hasNext = state.levelIndex < LEVELS.length - 1;
-  ui.nextLevelButton.textContent = hasNext ? "xià yī guān →" : "zài lái →";
+  ui.nextLevelButton.textContent = hasNext ? "下一关 xià yī guān →" : "再来一次 zài lái yí cì →";
   ui.nextLevelButton.onclick = () => startLevel(hasNext ? state.levelIndex + 1 : 0);
 
   showScreen(ui.resultPanel);

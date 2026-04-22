@@ -5,7 +5,7 @@ const AUTO_NEXT_DELAY_MS = 650;
 function createQuestion(id, emoji, hanzi, pinyin) {
   return {
     id,
-    cue: "🔊 dú",
+    cue: "dú",
     prompt: "kàn · tīng · dú",
     target: { emoji, hanzi, pinyin },
     speechText: hanzi,
@@ -100,6 +100,11 @@ const ui = {
 const audioMode = {
   available: "speechSynthesis" in window,
   lang: "zh-CN",
+  synth: "speechSynthesis" in window ? window.speechSynthesis : null,
+  voices: [],
+  preferredVoice: null,
+  primed: false,
+  speakTimer: null,
 };
 
 let state = {
@@ -154,6 +159,73 @@ function currentPlayableLevel() {
 
 function updateVoiceStrip() {
   ui.voiceStrip.textContent = audioMode.available ? "🔊 tap" : "🔇";
+}
+
+function matchesChineseVoice(voice) {
+  const lang = voice.lang?.toLowerCase() || "";
+  const name = voice.name?.toLowerCase() || "";
+  return lang.startsWith("zh") || lang.includes("cmn") || name.includes("chinese") || name.includes("mandarin");
+}
+
+function pickPreferredVoice(voices) {
+  return voices.find((voice) => matchesChineseVoice(voice) && voice.default)
+    || voices.find((voice) => matchesChineseVoice(voice))
+    || voices.find((voice) => voice.default)
+    || null;
+}
+
+function refreshVoices() {
+  if (!audioMode.available || !audioMode.synth) return;
+
+  const voices = audioMode.synth.getVoices();
+  if (!voices.length) return;
+
+  audioMode.voices = voices;
+  audioMode.preferredVoice = pickPreferredVoice(voices);
+}
+
+function primeSpeech() {
+  if (!audioMode.available || !audioMode.synth || audioMode.primed) return;
+
+  audioMode.primed = true;
+  refreshVoices();
+
+  try {
+    audioMode.synth.resume();
+
+    const unlockUtterance = new SpeechSynthesisUtterance("\u200B");
+    unlockUtterance.lang = audioMode.lang;
+    unlockUtterance.volume = 0;
+
+    if (audioMode.preferredVoice) {
+      unlockUtterance.voice = audioMode.preferredVoice;
+    }
+
+    audioMode.synth.speak(unlockUtterance);
+
+    window.setTimeout(() => {
+      if (audioMode.synth.speaking || audioMode.synth.pending) {
+        audioMode.synth.cancel();
+      }
+    }, 60);
+  } catch {
+    audioMode.primed = false;
+  }
+}
+
+function installSpeechSetup() {
+  if (!audioMode.available || !audioMode.synth) return;
+
+  refreshVoices();
+
+  if (typeof audioMode.synth.onvoiceschanged !== "undefined") {
+    audioMode.synth.onvoiceschanged = refreshVoices;
+  }
+
+  const unlock = () => primeSpeech();
+  window.addEventListener("touchstart", unlock, { once: true, passive: true });
+  window.addEventListener("pointerdown", unlock, { once: true, passive: true });
+  window.addEventListener("keydown", unlock, { once: true });
 }
 
 function renderMap() {
@@ -312,13 +384,41 @@ function speakCurrentQuestion() {
 }
 
 function speakChinese(text) {
-  if (!text || !audioMode.available) return;
+  if (!text || !audioMode.available || !audioMode.synth) return;
+
+  refreshVoices();
+
+  if (!audioMode.primed) {
+    primeSpeech();
+  }
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = audioMode.lang;
   utterance.rate = 0.78;
   utterance.pitch = 1.03;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
+
+  if (audioMode.preferredVoice) {
+    utterance.voice = audioMode.preferredVoice;
+  }
+
+  if (audioMode.speakTimer) {
+    window.clearTimeout(audioMode.speakTimer);
+  }
+
+  audioMode.speakTimer = window.setTimeout(() => {
+    try {
+      audioMode.synth.resume();
+
+      if (audioMode.synth.speaking || audioMode.synth.pending) {
+        audioMode.synth.cancel();
+      }
+
+      audioMode.synth.speak(utterance);
+    } catch {
+      ui.feedbackBox.className = "feedback-box bad";
+      ui.feedbackBox.textContent = "🔇";
+    }
+  }, audioMode.primed ? 40 : 140);
 }
 
 function resetProgress() {
@@ -340,6 +440,7 @@ ui.playAudioButton.addEventListener("click", speakCurrentQuestion);
 ui.correctButton.addEventListener("click", () => answerQuestion(true));
 ui.wrongButton.addEventListener("click", () => answerQuestion(false));
 
+installSpeechSetup();
 updateVoiceStrip();
 renderMap();
 startLevel(currentPlayableLevel());

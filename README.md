@@ -1,6 +1,6 @@
-# PinPin
+# PingYin
 
-PinPin 是一个面向儿童的中文拼音冒险小游戏，首发目标是 `pinpin.lucasli.net`。
+PingYin 是一个面向儿童的中文拼音冒险小游戏，首发目标是 `pingyin.lucasli.net`。
 
 ## V1 范围
 

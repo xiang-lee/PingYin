@@ -8,7 +8,7 @@
       name="description"
       content="PingYin 是一个给孩子练习中文拼音、声调和朗读的小冒险站。"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260423b" />
+    <link rel="stylesheet" href="./styles.css?v=20260423c" />
   </head>
   <body>
     <div class="cloud cloud-a"></div>
@@ -79,8 +79,24 @@
           <div class="target-card" id="target-card"></div>
 
           <div class="action-row">
-            <button class="secondary-btn icon-action" id="play-audio-button">🔊</button>
-            <button class="primary-btn voice-btn" id="voice-button">🎤 开始读</button>
+            <button class="secondary-btn action-btn" id="play-audio-button">
+              <span class="button-bilingual">
+                <span class="button-tail">🔊</span>
+                <span class="bilingual-stack compact">
+                  <span class="bilingual-pinyin">tīng yī tīng</span>
+                  <span class="bilingual-hanzi">听一听</span>
+                </span>
+              </span>
+            </button>
+            <button class="primary-btn voice-btn" id="voice-button">
+              <span class="button-bilingual">
+                <span class="button-tail">🎤</span>
+                <span class="bilingual-stack compact">
+                  <span class="bilingual-pinyin">kāi shǐ dú</span>
+                  <span class="bilingual-hanzi">开始读</span>
+                </span>
+              </span>
+            </button>
           </div>
 
           <div class="feedback-box" id="feedback-box">点麦克风，读给我听</div>
@@ -111,6 +127,6 @@
         </div>
       </section>
     </main>
-    <script src="./app.js?v=20260423b"></script>
+    <script src="./app.js?v=20260423c"></script>
   </body>
 </html>

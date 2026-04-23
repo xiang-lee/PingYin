@@ -350,13 +350,13 @@ function updateHeartChip() {
 function renderTargetMarkup(target) {
   return `
     <div class="target-stack">
-      <div class="target-emoji">${target.emoji}</div>
+      <div class="target-pinyin">${target.pinyin}</div>
       <div class="target-hanzi">${target.hanzi}</div>
     </div>
     <div class="target-scene" data-target-scene aria-hidden="true">
       <div class="scene-lane" data-scene-lane>
         <div class="scene-runner" data-scene-runner>
-          <span class="scene-runner-chip">${target.pinyin}</span>
+          <span class="scene-runner-chip scene-runner-emoji">${target.emoji}</span>
         </div>
         <div class="scene-hole" data-scene-hole></div>
       </div>
@@ -375,6 +375,15 @@ function renderBilingualMarkup(hanzi, pinyin, className = "") {
   `;
 }
 
+function renderButtonLabel(icon, hanzi, pinyin, className = "compact") {
+  return `
+    <span class="button-bilingual">
+      <span class="button-tail">${icon}</span>
+      ${renderBilingualMarkup(hanzi, pinyin, className)}
+    </span>
+  `;
+}
+
 function setFeedback(text, tone = "") {
   ui.feedbackBox.className = tone ? `feedback-box ${tone}` : "feedback-box";
   ui.feedbackBox.textContent = text;
@@ -388,26 +397,29 @@ function setVoiceLog(text, tone = "") {
 function updateVoiceButton() {
   ui.voiceButton.classList.toggle("is-listening", speechMode.listening);
   ui.playAudioButton.disabled = speechMode.listening || state.questionLocked || state.questionResolved;
+  ui.playAudioButton.innerHTML = renderButtonLabel("🔊", "听一听", "tīng yī tīng");
 
   if (!speechMode.available) {
-    ui.voiceButton.textContent = "🎤 用 Chrome";
+    ui.voiceButton.innerHTML = renderButtonLabel("🎤", "用 Chrome", "yòng Chrome");
     ui.voiceButton.disabled = true;
     return;
   }
 
   if (speechMode.listening) {
-    ui.voiceButton.textContent = "🎤 正在听";
+    ui.voiceButton.innerHTML = renderButtonLabel("🎤", "正在听", "zhèng zài tīng");
     ui.voiceButton.disabled = true;
     return;
   }
 
   if (state.questionLocked || state.questionResolved) {
-    ui.voiceButton.textContent = "🎤 等一下";
+    ui.voiceButton.innerHTML = renderButtonLabel("🎤", "等一下", "děng yī xià");
     ui.voiceButton.disabled = true;
     return;
   }
 
-  ui.voiceButton.textContent = speechMode.permissionDenied ? "🎤 打开麦克风" : "🎤 开始读";
+  ui.voiceButton.innerHTML = speechMode.permissionDenied
+    ? renderButtonLabel("🎤", "打开麦克风", "dǎ kāi mài kè fēng")
+    : renderButtonLabel("🎤", "开始读", "kāi shǐ dú");
   ui.voiceButton.disabled = false;
 }
 

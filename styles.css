@@ -206,6 +206,32 @@ body {
   gap: 0.6rem;
 }
 
+.action-btn,
+.voice-btn {
+  min-height: 4.4rem;
+  padding-inline: 1rem;
+}
+
+.action-btn .button-bilingual,
+.voice-btn .button-bilingual {
+  justify-content: center;
+}
+
+.action-btn .bilingual-stack,
+.voice-btn .bilingual-stack {
+  justify-items: start;
+}
+
+.action-btn .bilingual-pinyin,
+.voice-btn .bilingual-pinyin {
+  font-size: 0.72rem;
+}
+
+.action-btn .bilingual-hanzi,
+.voice-btn .bilingual-hanzi {
+  font-size: 1rem;
+}
+
 .button-tail {
   font-size: 1.1em;
   line-height: 1;
@@ -561,15 +587,20 @@ button:disabled {
   justify-items: center;
 }
 
-.target-emoji {
-  width: 6.5rem;
-  height: 6.5rem;
-  display: grid;
-  place-items: center;
-  border-radius: 30px;
-  font-size: 3.2rem;
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.22);
+.target-pinyin {
+  min-width: 8.6rem;
+  min-height: 4rem;
+  padding: 0.8rem 1.3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: clamp(1.45rem, 4.6vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #2a1037;
+  background: linear-gradient(135deg, rgba(255, 217, 106, 0.94), rgba(255, 136, 189, 0.84));
+  box-shadow: 0 12px 18px rgba(0, 0, 0, 0.14);
 }
 
 .target-hanzi {
@@ -634,6 +665,15 @@ button:disabled {
   font-weight: 800;
   letter-spacing: 0.04em;
   box-shadow: 0 12px 18px rgba(0, 0, 0, 0.14);
+}
+
+.scene-runner-emoji {
+  min-width: 4.25rem;
+  min-height: 4.25rem;
+  padding: 0.35rem;
+  border-radius: 26px;
+  font-size: 2.4rem;
+  line-height: 1;
 }
 
 .scene-hole {

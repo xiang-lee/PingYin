@@ -315,12 +315,6 @@ function renderQuestion() {
   ui.questionTypeChip.innerHTML = renderBilingualMarkup(question.cue.hanzi, question.cue.pinyin, "chip-stack compact");
   ui.promptCopy.innerHTML = renderBilingualMarkup(question.prompt.hanzi, question.prompt.pinyin, "prompt-stack");
   ui.targetCard.innerHTML = renderTargetMarkup(question.target);
-  setFeedback(speechMode.available ? "点麦克风，读给我听" : "请用 Chrome 开启自动判题");
-  setVoiceLog(
-    speechMode.available
-      ? `读对 ${question.target.hanzi} 就会进洞`
-      : "当前浏览器不支持语音识别，推荐桌面 Chrome",
-  );
 
   updateProgressDots(state.activeQuestions.length, state.questionIndex);
   updateRewardChip();
@@ -385,11 +379,15 @@ function renderButtonLabel(icon, hanzi, pinyin, className = "compact") {
 }
 
 function setFeedback(text, tone = "") {
+  if (!ui.feedbackBox) return;
+
   ui.feedbackBox.className = tone ? `feedback-box ${tone}` : "feedback-box";
   ui.feedbackBox.textContent = text;
 }
 
 function setVoiceLog(text, tone = "") {
+  if (!ui.voiceLog) return;
+
   ui.voiceLog.className = tone ? `voice-log ${tone}` : "voice-log";
   ui.voiceLog.textContent = text;
 }

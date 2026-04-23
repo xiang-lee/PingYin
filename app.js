@@ -1,6 +1,6 @@
 const STORAGE_KEY = "pinpin-progress-v4";
 const QUESTIONS_PER_ROUND = 3;
-const AUTO_NEXT_DELAY_MS = 650;
+const SUCCESS_NEXT_DELAY_MS = 1050;
 
 function createQuestion(id, emoji, hanzi, pinyin) {
   return {
@@ -86,9 +86,9 @@ const ui = {
   targetCard: document.getElementById("target-card"),
   promptCopy: document.getElementById("prompt-copy"),
   playAudioButton: document.getElementById("play-audio-button"),
+  voiceButton: document.getElementById("voice-button"),
   feedbackBox: document.getElementById("feedback-box"),
-  wrongButton: document.getElementById("wrong-button"),
-  correctButton: document.getElementById("correct-button"),
+  voiceLog: document.getElementById("voice-log"),
   backToMapButton: document.getElementById("back-to-map-button"),
   resultBadge: document.getElementById("result-badge"),
   resultTitle: document.getElementById("result-title"),
@@ -107,6 +107,17 @@ const audioMode = {
   speakTimer: null,
 };
 
+const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+
+const speechMode = {
+  available: Boolean(SpeechRecognitionCtor),
+  RecognitionCtor: SpeechRecognitionCtor,
+  recognition: null,
+  listening: false,
+  permissionDenied: false,
+  lastTranscript: "",
+};
+
 let state = {
   levelIndex: 0,
   questionIndex: 0,
@@ -114,6 +125,9 @@ let state = {
   levelRewards: 0,
   heartsLeft: 3,
   questionResolved: false,
+  questionLocked: false,
+  nextQuestionTimer: null,
+  sceneAnimation: null,
   progress: loadProgress(),
 };
 
@@ -157,8 +171,19 @@ function currentPlayableLevel() {
   return Math.max(0, Math.min(state.progress.lastLevel || 0, state.progress.unlocked - 1));
 }
 
+function currentQuestion() {
+  return state.activeQuestions[state.questionIndex] || null;
+}
+
 function updateVoiceStrip() {
-  ui.voiceStrip.textContent = audioMode.available ? "🔊 tap" : "🔇";
+  const audioLabel = audioMode.available ? "🔊 听标准音" : "🔇 无播音";
+  const speechLabel = !speechMode.available
+    ? "🎤 Chrome 自动判题"
+    : speechMode.permissionDenied
+      ? "🎤 打开麦克风"
+      : "🎤 读对自动过";
+
+  ui.voiceStrip.textContent = `${audioLabel} · ${speechLabel}`;
 }
 
 function matchesChineseVoice(voice) {
@@ -266,12 +291,14 @@ function showScreen(section) {
 }
 
 function startLevel(levelIndex) {
+  clearQuestionEffects();
   state.levelIndex = levelIndex;
   state.questionIndex = 0;
   state.activeQuestions = pickRandomQuestions(LEVELS[levelIndex].questionPool, QUESTIONS_PER_ROUND);
   state.levelRewards = 0;
   state.heartsLeft = 3;
   state.questionResolved = false;
+  state.questionLocked = false;
   state.progress.lastLevel = levelIndex;
   saveProgress();
   showScreen(ui.gamePanel);
@@ -279,20 +306,26 @@ function startLevel(levelIndex) {
 }
 
 function renderQuestion() {
-  const question = state.activeQuestions[state.questionIndex];
+  const question = currentQuestion();
 
+  clearQuestionEffects();
   state.questionResolved = false;
+  state.questionLocked = false;
+  speechMode.lastTranscript = "";
   ui.questionTypeChip.innerHTML = renderBilingualMarkup(question.cue.hanzi, question.cue.pinyin, "chip-stack compact");
   ui.promptCopy.innerHTML = renderBilingualMarkup(question.prompt.hanzi, question.prompt.pinyin, "prompt-stack");
   ui.targetCard.innerHTML = renderTargetMarkup(question.target);
-  ui.feedbackBox.className = "feedback-box";
-  ui.feedbackBox.textContent = "✨";
-  ui.correctButton.disabled = false;
-  ui.wrongButton.disabled = false;
+  setFeedback(speechMode.available ? "点麦克风，读给我听" : "请用 Chrome 开启自动判题");
+  setVoiceLog(
+    speechMode.available
+      ? `读对 ${question.target.hanzi} 就会进洞`
+      : "当前浏览器不支持语音识别，推荐桌面 Chrome",
+  );
 
   updateProgressDots(state.activeQuestions.length, state.questionIndex);
   updateRewardChip();
   updateHeartChip();
+  updateVoiceButton();
 }
 
 function updateProgressDots(total, activeIndex) {
@@ -319,7 +352,14 @@ function renderTargetMarkup(target) {
     <div class="target-stack">
       <div class="target-emoji">${target.emoji}</div>
       <div class="target-hanzi">${target.hanzi}</div>
-      <div class="target-pinyin">${target.pinyin}</div>
+    </div>
+    <div class="target-scene" data-target-scene aria-hidden="true">
+      <div class="scene-lane" data-scene-lane>
+        <div class="scene-runner" data-scene-runner>
+          <span class="scene-runner-chip">${target.pinyin}</span>
+        </div>
+        <div class="scene-hole" data-scene-hole></div>
+      </div>
     </div>
   `;
 }
@@ -335,28 +375,113 @@ function renderBilingualMarkup(hanzi, pinyin, className = "") {
   `;
 }
 
-function answerQuestion(correct) {
-  if (state.questionResolved) return;
-  state.questionResolved = true;
-  ui.correctButton.disabled = true;
-  ui.wrongButton.disabled = true;
+function setFeedback(text, tone = "") {
+  ui.feedbackBox.className = tone ? `feedback-box ${tone}` : "feedback-box";
+  ui.feedbackBox.textContent = text;
+}
 
-  if (correct) {
-    state.levelRewards += 1;
-    ui.feedbackBox.className = "feedback-box good";
-    ui.feedbackBox.textContent = "⭐ +1";
-    updateRewardChip();
-  } else {
-    state.heartsLeft = Math.max(0, state.heartsLeft - 1);
-    ui.feedbackBox.className = "feedback-box bad";
-    ui.feedbackBox.textContent = "🩵 -1";
-    updateHeartChip();
+function setVoiceLog(text, tone = "") {
+  ui.voiceLog.className = tone ? `voice-log ${tone}` : "voice-log";
+  ui.voiceLog.textContent = text;
+}
+
+function updateVoiceButton() {
+  ui.voiceButton.classList.toggle("is-listening", speechMode.listening);
+  ui.playAudioButton.disabled = speechMode.listening || state.questionLocked || state.questionResolved;
+
+  if (!speechMode.available) {
+    ui.voiceButton.textContent = "🎤 用 Chrome";
+    ui.voiceButton.disabled = true;
+    return;
   }
 
-  window.setTimeout(() => moveToNextQuestion(), AUTO_NEXT_DELAY_MS);
+  if (speechMode.listening) {
+    ui.voiceButton.textContent = "🎤 正在听";
+    ui.voiceButton.disabled = true;
+    return;
+  }
+
+  if (state.questionLocked || state.questionResolved) {
+    ui.voiceButton.textContent = "🎤 等一下";
+    ui.voiceButton.disabled = true;
+    return;
+  }
+
+  ui.voiceButton.textContent = speechMode.permissionDenied ? "🎤 打开麦克风" : "🎤 开始读";
+  ui.voiceButton.disabled = false;
+}
+
+function normalizeSpeechText(text) {
+  return (text || "")
+    .toLowerCase()
+    .normalize("NFKC")
+    .replace(/[\s,.!?;:，。！？；：、"'“”‘’`~·-]/g, "");
+}
+
+function escapeRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function matchesSpokenAnswer(transcript, expected) {
+  const normalizedTranscript = normalizeSpeechText(transcript);
+  const normalizedExpected = normalizeSpeechText(expected);
+
+  if (!normalizedTranscript || !normalizedExpected) {
+    return false;
+  }
+
+  if (normalizedTranscript === normalizedExpected) {
+    return true;
+  }
+
+  const repeatedExpected = new RegExp(`^(?:${escapeRegex(normalizedExpected)})+$`);
+  return repeatedExpected.test(normalizedTranscript);
+}
+
+function collectRecognitionCandidates(event) {
+  const result = event.results[event.resultIndex] || event.results[event.results.length - 1];
+  if (!result) {
+    return [];
+  }
+
+  const transcripts = [];
+  for (let index = 0; index < result.length; index += 1) {
+    const transcript = result[index].transcript?.trim();
+    if (transcript && !transcripts.includes(transcript)) {
+      transcripts.push(transcript);
+    }
+  }
+
+  return transcripts;
+}
+
+function answerQuestion(correct) {
+  if (state.questionResolved || state.questionLocked) return;
+  state.questionLocked = true;
+  updateVoiceButton();
+
+  if (correct) {
+    state.questionResolved = true;
+    state.levelRewards += 1;
+    setFeedback("读对了，进洞啦", "good");
+    updateRewardChip();
+    playSuccessScene();
+    scheduleNextQuestion();
+    return;
+  }
+
+  state.heartsLeft = Math.max(0, state.heartsLeft - 1);
+  setFeedback(state.heartsLeft > 0 ? "再试一次" : "继续试试", "bad");
+  updateHeartChip();
+  playRetryScene(() => {
+    state.questionLocked = false;
+    setFeedback(state.heartsLeft > 0 ? "再读一次" : "继续读，我再听一次");
+    updateVoiceButton();
+  });
 }
 
 function moveToNextQuestion() {
+  clearQuestionEffects();
   const isLastQuestion = state.questionIndex === state.activeQuestions.length - 1;
   if (!isLastQuestion) {
     state.questionIndex += 1;
@@ -367,6 +492,7 @@ function moveToNextQuestion() {
 }
 
 function finishLevel() {
+  clearQuestionEffects();
   const level = LEVELS[state.levelIndex];
   const rewards = state.levelRewards;
   state.progress.starsByLevel[level.id] = Math.max(state.progress.starsByLevel[level.id] || 0, rewards);
@@ -394,7 +520,7 @@ function renderRewardText(count) {
 }
 
 function speakCurrentQuestion() {
-  const question = state.activeQuestions[state.questionIndex];
+  const question = currentQuestion();
   speakChinese(question.speechText);
 }
 
@@ -430,13 +556,317 @@ function speakChinese(text) {
 
       audioMode.synth.speak(utterance);
     } catch {
-      ui.feedbackBox.className = "feedback-box bad";
-      ui.feedbackBox.textContent = "🔇";
+      setFeedback("🔇", "bad");
     }
   }, audioMode.primed ? 40 : 140);
 }
 
+function cleanupSpeechRecognition() {
+  if (!speechMode.recognition) {
+    speechMode.listening = false;
+    updateVoiceButton();
+    return;
+  }
+
+  const activeRecognition = speechMode.recognition;
+  speechMode.recognition = null;
+  speechMode.listening = false;
+
+  try {
+    activeRecognition.onstart = null;
+    activeRecognition.onresult = null;
+    activeRecognition.onerror = null;
+    activeRecognition.onend = null;
+    activeRecognition.abort();
+  } catch {
+    // Ignore abort errors from browsers that already ended the session.
+  }
+
+  updateVoiceButton();
+}
+
+function startSpeechCheck() {
+  const question = currentQuestion();
+  if (!question || state.questionLocked || state.questionResolved || speechMode.listening) {
+    return;
+  }
+
+  if (!speechMode.available) {
+    setFeedback("请用 Chrome", "bad");
+    setVoiceLog("这个浏览器不支持自动判题", "bad");
+    updateVoiceButton();
+    return;
+  }
+
+  cleanupSpeechRecognition();
+
+  const recognition = new speechMode.RecognitionCtor();
+  speechMode.recognition = recognition;
+  speechMode.listening = true;
+  speechMode.lastTranscript = "";
+  updateVoiceButton();
+  setFeedback("我在听");
+  setVoiceLog(`请读：${question.speechText}`, "listening");
+
+  recognition.lang = "zh-CN";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 5;
+
+  recognition.onstart = () => {
+    if (speechMode.recognition !== recognition) {
+      return;
+    }
+
+    speechMode.permissionDenied = false;
+    updateVoiceStrip();
+    updateVoiceButton();
+  };
+
+  recognition.onresult = (event) => {
+    if (speechMode.recognition !== recognition || currentQuestion()?.id !== question.id) {
+      return;
+    }
+
+    const candidates = collectRecognitionCandidates(event);
+    const heard = candidates[0] || "";
+
+    if (!heard) {
+      setFeedback("没听清", "bad");
+      setVoiceLog("再靠近一点，慢慢读", "bad");
+      return;
+    }
+
+    speechMode.lastTranscript = heard;
+
+    const matched = candidates.some((candidate) => matchesSpokenAnswer(candidate, question.speechText));
+    setVoiceLog(`我听到：${heard}`, matched ? "good" : "bad");
+    answerQuestion(matched);
+  };
+
+  recognition.onerror = (event) => {
+    if (speechMode.recognition !== recognition) {
+      return;
+    }
+
+    speechMode.listening = false;
+    speechMode.recognition = null;
+
+    if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+      speechMode.permissionDenied = true;
+      updateVoiceStrip();
+      setFeedback("麦克风没开", "bad");
+      setVoiceLog("请允许浏览器使用麦克风", "bad");
+    } else if (event.error === "no-speech") {
+      setFeedback("没听清", "bad");
+      setVoiceLog("再试一次，靠近一点慢慢读", "bad");
+    } else if (event.error === "audio-capture") {
+      setFeedback("没找到麦克风", "bad");
+      setVoiceLog("检查电脑麦克风后再试", "bad");
+    } else if (event.error !== "aborted") {
+      setFeedback("识别失败", "bad");
+      setVoiceLog("浏览器这次没听清，再点一次麦克风", "bad");
+    }
+
+    updateVoiceButton();
+  };
+
+  recognition.onend = () => {
+    if (speechMode.recognition !== recognition) {
+      return;
+    }
+
+    speechMode.listening = false;
+    speechMode.recognition = null;
+    updateVoiceButton();
+  };
+
+  try {
+    recognition.start();
+  } catch {
+    speechMode.listening = false;
+    speechMode.recognition = null;
+    setFeedback("麦克风没启动", "bad");
+    setVoiceLog("浏览器没有成功开始录音，再点一次试试", "bad");
+    updateVoiceButton();
+  }
+}
+
+function scheduleNextQuestion() {
+  if (state.nextQuestionTimer) {
+    window.clearTimeout(state.nextQuestionTimer);
+  }
+
+  state.nextQuestionTimer = window.setTimeout(() => {
+    state.nextQuestionTimer = null;
+    moveToNextQuestion();
+  }, SUCCESS_NEXT_DELAY_MS);
+}
+
+function getSceneParts() {
+  const scene = ui.targetCard.querySelector("[data-target-scene]");
+  if (!scene) return {};
+
+  return {
+    scene,
+    lane: scene.querySelector("[data-scene-lane]"),
+    runner: scene.querySelector("[data-scene-runner]"),
+    hole: scene.querySelector("[data-scene-hole]"),
+  };
+}
+
+function clearQuestionEffects() {
+  cleanupSpeechRecognition();
+
+  if (state.nextQuestionTimer) {
+    window.clearTimeout(state.nextQuestionTimer);
+    state.nextQuestionTimer = null;
+  }
+
+  if (state.sceneAnimation) {
+    state.sceneAnimation.onfinish = null;
+    state.sceneAnimation.oncancel = null;
+    state.sceneAnimation.cancel();
+    state.sceneAnimation = null;
+  }
+
+  const { scene, runner } = getSceneParts();
+  if (scene) {
+    scene.classList.remove("is-success", "is-bump");
+  }
+
+  if (runner) {
+    runner.classList.remove("scene-runner-static");
+    runner.style.removeProperty("left");
+    runner.style.removeProperty("transform");
+    runner.style.removeProperty("opacity");
+  }
+}
+
+function freezeRunner() {
+  const parts = getSceneParts();
+  if (!parts.scene || !parts.lane || !parts.runner) return null;
+
+  const laneRect = parts.lane.getBoundingClientRect();
+  const runnerRect = parts.runner.getBoundingClientRect();
+  const currentLeft = Math.max(0, runnerRect.left - laneRect.left);
+
+  parts.runner.classList.add("scene-runner-static");
+  parts.runner.style.left = `${currentLeft}px`;
+  parts.runner.style.transform = "translateY(-50%)";
+  parts.runner.style.opacity = "1";
+
+  return {
+    ...parts,
+    currentLeft,
+    laneRect,
+    runnerRect,
+  };
+}
+
+function resetRunner(parts) {
+  if (!parts?.runner) return;
+
+  parts.scene?.classList.remove("is-success", "is-bump");
+  parts.runner.classList.remove("scene-runner-static");
+  parts.runner.style.removeProperty("left");
+  parts.runner.style.removeProperty("transform");
+  parts.runner.style.removeProperty("opacity");
+}
+
+function playSuccessScene() {
+  const frozen = freezeRunner();
+  if (!frozen?.runner?.animate || !frozen.hole) {
+    resetRunner(frozen);
+    return;
+  }
+
+  const holeRect = frozen.hole.getBoundingClientRect();
+  const holeCenterLeft = holeRect.left - frozen.laneRect.left + (holeRect.width - frozen.runnerRect.width) / 2;
+  const settleLeft = Math.max(frozen.currentLeft, holeCenterLeft - 28);
+
+  frozen.scene.classList.add("is-success");
+  state.sceneAnimation = frozen.runner.animate([
+    {
+      left: `${frozen.currentLeft}px`,
+      transform: "translateY(-50%) scale(1)",
+      opacity: 1,
+    },
+    {
+      left: `${settleLeft}px`,
+      transform: "translateY(-50%) scale(0.96)",
+      opacity: 1,
+      offset: 0.68,
+    },
+    {
+      left: `${holeCenterLeft}px`,
+      transform: "translateY(calc(-50% + 22px)) scale(0.14)",
+      opacity: 0.06,
+    },
+  ], {
+    duration: SUCCESS_NEXT_DELAY_MS - 120,
+    easing: "cubic-bezier(0.24, 0.86, 0.34, 1)",
+    fill: "forwards",
+  });
+
+  state.sceneAnimation.onfinish = () => {
+    state.sceneAnimation = null;
+  };
+
+  state.sceneAnimation.oncancel = () => {
+    state.sceneAnimation = null;
+  };
+}
+
+function playRetryScene(onDone) {
+  const frozen = freezeRunner();
+  if (!frozen?.runner?.animate) {
+    resetRunner(frozen);
+    onDone?.();
+    return;
+  }
+
+  const laneWidth = frozen.lane.clientWidth;
+  const runnerWidth = frozen.runnerRect.width;
+  const nudgeRight = Math.min(frozen.currentLeft + 18, Math.max(4, laneWidth - runnerWidth - 6));
+  const bounceLeft = Math.max(frozen.currentLeft - 24, 4);
+
+  frozen.scene.classList.add("is-bump");
+  state.sceneAnimation = frozen.runner.animate([
+    {
+      left: `${frozen.currentLeft}px`,
+      transform: "translateY(-50%) scale(1)",
+      opacity: 1,
+    },
+    {
+      left: `${nudgeRight}px`,
+      transform: "translateY(-50%) rotate(4deg) scale(1.02)",
+      opacity: 1,
+      offset: 0.36,
+    },
+    {
+      left: `${bounceLeft}px`,
+      transform: "translateY(-50%) rotate(-5deg) scale(0.98)",
+      opacity: 1,
+    },
+  ], {
+    duration: 420,
+    easing: "ease-out",
+    fill: "forwards",
+  });
+
+  const finish = () => {
+    state.sceneAnimation = null;
+    resetRunner(frozen);
+    onDone?.();
+  };
+
+  state.sceneAnimation.onfinish = finish;
+  state.sceneAnimation.oncancel = finish;
+}
+
 function resetProgress() {
+  clearQuestionEffects();
   state.progress = {
     unlocked: 1,
     starsByLevel: {},
@@ -447,13 +877,17 @@ function resetProgress() {
   startLevel(0);
 }
 
+function showMap() {
+  clearQuestionEffects();
+  showScreen(ui.mapPanel);
+}
+
 ui.startButton.addEventListener("click", () => startLevel(currentPlayableLevel()));
 ui.resetProgressButton.addEventListener("click", resetProgress);
-ui.backToMapButton.addEventListener("click", () => showScreen(ui.mapPanel));
-ui.resultMapButton.addEventListener("click", () => showScreen(ui.mapPanel));
+ui.backToMapButton.addEventListener("click", showMap);
+ui.resultMapButton.addEventListener("click", showMap);
 ui.playAudioButton.addEventListener("click", speakCurrentQuestion);
-ui.correctButton.addEventListener("click", () => answerQuestion(true));
-ui.wrongButton.addEventListener("click", () => answerQuestion(false));
+ui.voiceButton.addEventListener("click", startSpeechCheck);
 
 installSpeechSetup();
 updateVoiceStrip();

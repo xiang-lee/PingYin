@@ -522,7 +522,8 @@ button:disabled {
   min-height: 270px;
   padding: 1.2rem;
   display: grid;
-  place-items: center;
+  gap: 1rem;
+  align-items: center;
   text-align: center;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04)),
@@ -576,10 +577,142 @@ button:disabled {
   font-weight: 700;
 }
 
-.target-pinyin {
-  font-size: clamp(1.6rem, 5vw, 2.6rem);
+.target-scene {
+  --scene-hole-size: 4.2rem;
+  position: relative;
+  z-index: 1;
+  width: min(100%, 29rem);
+  justify-self: center;
+  padding: 0.85rem 0.95rem;
+  border-radius: 26px;
+  background: rgba(8, 13, 36, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.scene-lane {
+  position: relative;
+  min-height: 5.1rem;
+}
+
+.scene-lane::before {
+  content: "";
+  position: absolute;
+  left: 0.55rem;
+  right: calc(var(--scene-hole-size) - 0.25rem);
+  top: 50%;
+  height: 0.58rem;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(142, 200, 255, 0.22), rgba(255, 217, 106, 0.2));
+}
+
+.scene-runner {
+  position: absolute;
+  left: 0.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: runner-loop 2.45s ease-in-out infinite;
+  will-change: left, transform;
+}
+
+.scene-runner.scene-runner-static {
+  animation: none;
+}
+
+.scene-runner-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.8rem;
+  min-height: 3.25rem;
+  padding: 0.72rem 1rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 217, 106, 0.92), rgba(255, 136, 189, 0.84));
+  color: #2a1037;
+  font-size: clamp(1.15rem, 4.6vw, 1.55rem);
   font-weight: 800;
   letter-spacing: 0.04em;
+  box-shadow: 0 12px 18px rgba(0, 0, 0, 0.14);
+}
+
+.scene-hole {
+  position: absolute;
+  right: 0.1rem;
+  top: 50%;
+  width: var(--scene-hole-size);
+  height: var(--scene-hole-size);
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 32%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.02) 24%, rgba(8, 12, 28, 0.96) 62%),
+    radial-gradient(circle, rgba(255, 136, 189, 0.24), rgba(8, 12, 28, 0) 72%);
+  box-shadow:
+    inset 0 0 18px rgba(0, 0, 0, 0.55),
+    0 0 0 0.32rem rgba(255, 217, 106, 0.1),
+    0 12px 22px rgba(0, 0, 0, 0.22);
+  animation: hole-pulse 2.45s ease-in-out infinite;
+}
+
+.scene-hole::after {
+  content: "";
+  position: absolute;
+  inset: 0.52rem;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+}
+
+.target-scene.is-success .scene-hole {
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.6),
+    0 0 0 0.42rem rgba(126, 241, 209, 0.18),
+    0 0 20px rgba(126, 241, 209, 0.32);
+}
+
+.target-scene.is-bump .scene-hole {
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.6),
+    0 0 0 0.38rem rgba(255, 180, 168, 0.16),
+    0 0 18px rgba(255, 180, 168, 0.24);
+}
+
+@keyframes runner-loop {
+  0%,
+  12% {
+    left: 0.2rem;
+    transform: translateY(-50%) rotate(-1deg);
+  }
+
+  58% {
+    left: calc(100% - 8.7rem);
+    transform: translateY(-50%) rotate(1deg);
+  }
+
+  72% {
+    left: calc(100% - 8.15rem);
+    transform: translateY(-50%) rotate(4deg);
+  }
+
+  84% {
+    left: calc(100% - 8.85rem);
+    transform: translateY(-50%) rotate(-3deg);
+  }
+
+  100% {
+    left: 0.2rem;
+    transform: translateY(-50%) rotate(-1deg);
+  }
+}
+
+@keyframes hole-pulse {
+  0%,
+  100% {
+    transform: translateY(-50%) scale(1);
+  }
+
+  50% {
+    transform: translateY(-50%) scale(1.04);
+  }
 }
 
 .choice-grid {
@@ -649,6 +782,7 @@ button:disabled {
 
 .feedback-box {
   font-weight: 700;
+  line-height: 1.3;
 }
 
 .feedback-box.good {
@@ -657,6 +791,34 @@ button:disabled {
 
 .feedback-box.bad {
   color: var(--bad);
+}
+
+.voice-log {
+  min-height: 4rem;
+  display: grid;
+  place-items: center;
+  line-height: 1.35;
+}
+
+.voice-log.good {
+  color: var(--good);
+}
+
+.voice-log.bad {
+  color: var(--bad);
+}
+
+.voice-log.listening {
+  color: var(--accent);
+}
+
+.voice-btn {
+  min-width: 10.5rem;
+  font-weight: 700;
+}
+
+.voice-btn.is-listening {
+  box-shadow: 0 0 0 0.24rem rgba(126, 241, 209, 0.2), 0 16px 28px rgba(255, 217, 106, 0.2);
 }
 
 .match-board {
@@ -788,6 +950,10 @@ button:disabled {
 
   .target-card {
     min-height: 235px;
+  }
+
+  .target-scene {
+    width: 100%;
   }
 
   .splash-play,
